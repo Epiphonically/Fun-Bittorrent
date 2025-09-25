@@ -66,7 +66,7 @@ ssize_t recv_message_from_peer(PeerInfo *him, void **recv_buf) {
     pfd.events = POLLIN;
     
     ssize_t got;
-    if (poll(&pfd, 1, 0) > 0) { /* thanks bbgurl */
+    if (poll(&pfd, 1, 0) > 0) { /* thanks */
         if (him->recv_buf) {
             got = recv(him->peer_sock, him->recv_buf + him->gotten, him->recv_len - him->gotten, 0);
             him->gotten += got;
@@ -85,7 +85,7 @@ ssize_t recv_message_from_peer(PeerInfo *him, void **recv_buf) {
             if (safely_recv(him->peer_sock, him->recv_buf, HEADER_LEN) != HEADER_LEN) {
                 free(him->recv_buf);
                 him->recv_buf = NULL;
-                him->my_state = SCREW_U;
+                him->my_state = BAD_PEER;
                 return -1;
             }
             him->gotten = 0;
@@ -125,27 +125,23 @@ void process_peer_message(void* buf, ssize_t size, PeerInfo *the_peer, struct bi
 
     switch (action) {
         case CHOKE:
-            // printf("CHOKE WTF?? BRO\n");
-            // fflush(stdout);
+   
             the_peer->is_choking_me = 1;
             break;
 
         case UNCHOKE:
-            // printf("TY for unchoke bro\n");
-            // fflush(stdout);
+
             the_peer->is_choking_me = 0;
             break;
 
         case INTERESTED:
-            // printf("Hes interested in me how cute\n");
-            // fflush(stdout);
+
             the_peer->is_interested_in_me = 1;
 
             break;
 
         case NOT_INTERESTED:
-            // printf("Hes not interested in me bruh\n");
-            // fflush(stdout);
+       
             the_peer->is_interested_in_me = 0;
             break;
 
@@ -153,8 +149,7 @@ void process_peer_message(void* buf, ssize_t size, PeerInfo *the_peer, struct bi
             /* If im not yet interested I need to tell him that
              * I am :) */
             /* Then request the pieces */
-            // printf("He has this piece what the hell man\n");
-            // fflush(stdout);
+          
             if (the_peer->my_bit_field == NULL) {
                 the_peer->my_bit_field = malloc(the_tracker->bit_field_len);
             }
@@ -174,7 +169,7 @@ void process_peer_message(void* buf, ssize_t size, PeerInfo *the_peer, struct bi
                 printf("INVALID BITFIELD\n");
 
                 fflush(stdout);
-                the_peer->my_state = SCREW_U;
+                the_peer->my_state = BAD_PEER;
             } else {
                 if (the_peer->my_bit_field == NULL) {
                     the_peer->my_bit_field = malloc(the_tracker->bit_field_len);
@@ -262,9 +257,9 @@ void process_peer_message(void* buf, ssize_t size, PeerInfo *the_peer, struct bi
             uint32_t piece_index = ntohl(((uint32_t *)(buf + 1))[0]);
             uint32_t piece_begin = ntohl(((uint32_t *)(buf + 1))[1]);
 
-            // printf("THIS IS A PIECE TY TY: IDX: %d, BEGIN: %d\n", piece_index, piece_begin);
+            //printf("THIS IS A PIECE: IDX: %d, BEGIN: %d\n", piece_index, piece_begin);
             // fflush(stdout);
-            printf("%d, %d\n", the_tracker->piece_len, the_tracker->num_pieces);
+            //printf("%d, %d\n", the_tracker->piece_len, the_tracker->num_pieces);
             uint32_t the_len = size - 9;
             if (the_len <= MAX_REQ_SIZE && need_piece(the_tracker, piece_index)) {
                 FILE *fp = fopen(the_tracker->file_name, "r+");
@@ -290,7 +285,7 @@ void process_peer_message(void* buf, ssize_t size, PeerInfo *the_peer, struct bi
                    
                     for (check = 0; check < 20; check++) {
                         if (temp_hash[check] != the_tracker->piece_hashes[piece_index][check]) {
-                           
+                
                             turn_on = 0;
                         } 
                     }
@@ -362,8 +357,6 @@ int he_has_piece(PeerInfo *him, uint32_t idx) {
     }
     return 0;
 }
-
-
 
 int need_piece(struct bittorrent_info *the_tracker, int idx) {
     uint8_t mask = ((1 << 7) >> (idx % 8));
@@ -513,8 +506,7 @@ int see_whats_up_with_peers(struct bittorrent_info *the_tracker) {
     if (the_tracker->owned_pieces == the_tracker->num_pieces) {
         the_tracker->we_are_seeding = 1;
     }
-    memset(the_tracker->piece_density, 0,
-           sizeof(*the_tracker->piece_density) * the_tracker->num_pieces);
+    memset(the_tracker->piece_density, 0, sizeof(*the_tracker->piece_density) * the_tracker->num_pieces);
     for (size_t i = 0; i < MAX_PEERS; i++) {
         if (the_tracker->peer_list[i].my_bit_field != NULL) {
             for (size_t k = 0; k < the_tracker->num_pieces; k++) {
@@ -525,13 +517,13 @@ int see_whats_up_with_peers(struct bittorrent_info *the_tracker) {
             }
         }
     }
+
     clock_gettime(CLOCK_REALTIME, &curr_time);
     for (size_t i = 0; i < the_tracker->num_pieces; i++) {
         if (time_delta(curr_time, the_tracker->last_outgoing_map_update[i]) > OUTGOING_PIECE_TIMEOUT && the_tracker->outgoing_map[i]) {
             the_tracker->outgoing_map[i] = 0;
         
         }
-        
     }
    
 
@@ -556,7 +548,7 @@ int see_whats_up_with_peers(struct bittorrent_info *the_tracker) {
                     temp_addr.sin_family = AF_INET;
                     temp_addr.sin_port = htons(curr_peer->port);
                     if (!inet_aton(curr_peer->ip, &temp_addr.sin_addr)) {
-                        printf("BRUH INVALID ADDRESS?????????\n");
+                        printf("INVALID ADDRESS\n");
                         fflush(stdout);
                     }
                     curr_peer->peer_sock = socket(AF_INET, SOCK_STREAM, 0);
@@ -594,7 +586,7 @@ int see_whats_up_with_peers(struct bittorrent_info *the_tracker) {
                         curr_peer->my_state = CONNECTED_NOT_HANDSHAKED;
                     } else if (time_delta(curr_peer->last_connect_time, curr_time) >= RETRY_CONNECT_TIMER) {
                        
-                        curr_peer->my_state = SCREW_U;
+                        curr_peer->my_state = BAD_PEER;
                     }
                 }
                
@@ -603,7 +595,7 @@ int see_whats_up_with_peers(struct bittorrent_info *the_tracker) {
             case CONNECTED_NOT_HANDSHAKED:
                  
                 if (curr_peer->handshakes_tried > MAX_HANDSHAKE_RETRYS) {
-                    curr_peer->my_state = SCREW_U;
+                    curr_peer->my_state = BAD_PEER;
                     break;
                 }
                 /* send handshake */
@@ -637,11 +629,9 @@ int see_whats_up_with_peers(struct bittorrent_info *the_tracker) {
 
                 /* OK WE NEED TO UHHH WAIT FOR THEIR HAND SHAKE ON A TIMEOUT AND
                  * SEND HANDSHAKE AGAIN... */
-                /* IF HE MAES ME MAD HES GONNA GET KICKED */
               
                 if (safely_send(curr_peer->peer_sock, buf, len) != len) {
-                    curr_peer->my_state = SCREW_U;
-                   
+                    curr_peer->my_state = BAD_PEER;
                 } 
              
                 
@@ -680,7 +670,7 @@ int see_whats_up_with_peers(struct bittorrent_info *the_tracker) {
 
                     int failed_to_recv = 0;
                     if (safely_recv(curr_peer->peer_sock, recv_buf + 1, 48 + pstrlen) != 48 + pstrlen) {
-                        printf("BAD HANDSHAKERS with len: %d\n", pstrlen);
+                        printf("BAD HANDSHAKE with len: %d\n", pstrlen);
                         fflush(stdout);
                         failed_to_recv = 1;
                     }
@@ -759,8 +749,8 @@ int see_whats_up_with_peers(struct bittorrent_info *the_tracker) {
               
                 break;
 
-            case SCREW_U:
-
+            case BAD_PEER:
+                printf("HERE\n");
                 if (the_tracker->peer_list[i].my_bit_field) {
                     free(the_tracker->peer_list[i].my_bit_field);
                     the_tracker->peer_list[i].my_bit_field = NULL;

@@ -71,7 +71,7 @@ typedef enum {
     CONNECTED_NOT_HANDSHAKED,
     CONNECTED_HANDSHAKE_SENT,
     CONNECTED_HANDSHAKE_RECVD,
-    SCREW_U
+    BAD_PEER
 } PeerState;
 
 typedef struct {

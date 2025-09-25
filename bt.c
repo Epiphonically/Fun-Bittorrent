@@ -117,8 +117,6 @@ int main(int argc, char *argv[]) {
 
         if (poll(&the_pfd, 1, 0) > 0) {
             /* Someone wants to connect! */
-            printf("NEW PHONE WHO DIS\n");
-            fflush(stdout);
             struct sockaddr_in temp_addr;
             socklen_t size = sizeof(temp_addr);
             int new_sock =
@@ -160,8 +158,7 @@ int main(int argc, char *argv[]) {
                     incr = recv(curr_limbo->the_peer.peer_sock,
                                 recv_buf + 1 + got, 48 + pstrlen - got, 0);
                     if (incr <= 0) {
-                        printf("BAD HANDSHAKERS");
-                        fflush(stdout);
+                        printf("BAD HANDSHAKE");
                         failed_to_recv = 1;
 
                         break;
@@ -186,14 +183,12 @@ int main(int argc, char *argv[]) {
                             }
                         }
                         if (verified) {
-                            /* OHHH SO HES DOWNLOADING THIS FILLEEE */
-                            /* Find some room for him and shake his hand back!
-                             */
+                            /* Downloading Same File */
 
                             for (int j = 0; j < MAX_PEERS; j++) {
                                 if (curr_track->peer_list[j].port == 0 ||
                                     curr_track->peer_list[j].my_state ==
-                                        SCREW_U) {
+                                        BAD_PEER) {
 
                                     curr_track->peer_list[j] =
                                         curr_limbo->the_peer;
