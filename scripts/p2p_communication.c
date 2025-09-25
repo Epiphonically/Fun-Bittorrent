@@ -691,14 +691,11 @@ int see_whats_up_with_peers(struct bittorrent_info *the_tracker) {
                             curr_peer->my_state = CONNECTED_HANDSHAKE_RECVD;
 
                             connected_hand_peers++;
-                                                    
-                            printf("Num Good People: %d\n", connected_hand_peers);
-                            fflush(stdout);
-
+                                                
                             curr_peer->handshakes_tried = 0;
                             //make_socket_blocking_again(curr_peer->peer_sock);
                         } else {
-                            printf("FAILED TO VERIFY?\n");
+                            printf("FAILED TO VERIFY\n");
                             fflush(stdout);
                         }
                     } 
@@ -750,7 +747,6 @@ int see_whats_up_with_peers(struct bittorrent_info *the_tracker) {
                 break;
 
             case BAD_PEER:
-                printf("HERE\n");
                 if (the_tracker->peer_list[i].my_bit_field) {
                     free(the_tracker->peer_list[i].my_bit_field);
                     the_tracker->peer_list[i].my_bit_field = NULL;
